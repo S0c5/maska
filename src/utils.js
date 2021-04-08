@@ -15,16 +15,31 @@ function findInputElement (el) {
 }
 
 function fixInputSelection (el, position, digit) {
-  while (position && position < el.value.length && el.value.charAt(position - 1) !== digit) {
+  const value = el.value || el.innerText || ''
+
+  while (position && position < value.length && value.charAt(position - 1) !== digit) {
     position++
   }
 
-  const selectionRange = el.type ? el.type.match(/^(text|search|password|tel|url)$/i) : !el.type
+  const selectionRange = el.type ? el.type.match(/^(text|search|password|tel|url)$/i) : !!el.type
+
   if (selectionRange && el === document.activeElement) {
     el.setSelectionRange(position, position)
     setTimeout(function () {
       el.setSelectionRange(position, position)
     }, 0)
+  } else if (!el.value && el.innerText) {
+    el.focus()  
+    let sel;
+    if (document.selection) {
+      sel = document.selection.createRange();
+      sel.moveStart('character', position);
+      sel.select();
+    }
+    else {
+      sel = window.getSelection();
+      sel.collapse(el.lastChild, position);
+    }
   }
 }
 

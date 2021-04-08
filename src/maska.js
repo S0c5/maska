@@ -50,33 +50,38 @@ export default class Maska {
   }
 
   updateValue (el, evt) {
-    const wrongNum = el.type.match(/^number$/i) && el.validity.badInput
-    if ((!el.value && !wrongNum) || !el.dataset.mask) {
+    const wrongNum = el.type && el.type.match(/^number$/i) && el.validity.badInput
+    const value = el.value || el.innerText || '' // in case of contenteditable
+
+    if ((!value && !wrongNum) || !el.dataset.mask) {
       el.dataset.maskRawValue = ''
       this.dispatch('maska', el, evt)
       return
     }
 
-    let position = el.selectionEnd
-    const oldValue = el.value
+    let position = el.selectionEnd;
+    const oldValue = value
     const digit = oldValue[position - 1]
 
-    el.dataset.maskRawValue = mask(el.value, el.dataset.mask, this._opts.tokens, false)
-    el.value = mask(el.value, el.dataset.mask, this._opts.tokens)
+    el.dataset.maskRawValue = mask(value, el.dataset.mask, this._opts.tokens, false)
+    const maskedValue = mask(value, el.dataset.mask, this._opts.tokens)
+    if (el.value) el.value = maskedValue;
+    if (el.innerText) el.innerText = maskedValue
 
-    if (evt && evt.inputType === 'insertText' && position === oldValue.length) {
-      position = el.value.length
+    if (evt && evt.inputType === 'insertText' && position === oldValue.length || !position) {
+      position = maskedValue.length
     }
+
     fixInputSelection(el, position, digit)
 
     this.dispatch('maska', el, evt)
-    if (el.value !== oldValue) {
+    if (maskedValue !== oldValue) {
       this.dispatch('input', el, evt)
     }
   }
 
   beforeInput (e) {
-    if (e.target.type.match(/^number$/i) && e.data && isNaN(e.target.value + e.data)) {
+    if (e.target.type && e.target.type.match(/^number$/i) && e.data && isNaN(e.target.value + e.data)) {
       e.preventDefault()
     }
   }
